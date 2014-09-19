@@ -1,6 +1,16 @@
 QUnit.test "Can Create User", (assert) ->
   user = new User 0
   assert.ok user, "User Created"
+  assert.equal user.linkedUsers(), 1, "Reports 1 User in Chain"
+
+QUnit.test "Can Assign Coach (u1) to User (u0)", (assert) ->
+  u0 = new User 0
+  u1 = new User 1
+  u0.addCoach u1
+  assert.equal u1.students[0], u0, "u1's students contains u0"
+  assert.equal u0.coaches[0], u1, "u0's coaches contains u1"
+  assert.equal u1.linkedUsers(), 2, "u1 Reports 2 Users in Chain"
+  assert.equal u0.linkedUsers(), 2, "u0 Reports 2 Users in Chain"
 
 QUnit.test "Can Assign Students (u1 and u2) to User (u0)", (assert) ->
   u0 = new User 0
@@ -10,13 +20,9 @@ QUnit.test "Can Assign Students (u1 and u2) to User (u0)", (assert) ->
   assert.deepEqual u0.students, [u1, u2], "u0's students are u1 and u2"
   assert.deepEqual u1.coaches, [u0], "u1's coach is u0"
   assert.deepEqual u2.coaches, [u0], "u2's coach is u0"
-
-QUnit.test "Can Assign Coach (u1) to User (u0)", (assert) ->
-  u0 = new User 0
-  u1 = new User 1
-  u0.addCoach u1
-  assert.equal u1.students[0], u0, "u1's students contains u0"
-  assert.equal u0.coaches[0], u1, "u0's coaches contains u1"
+  assert.equal u0.linkedUsers(), 3, "u0 Reports 3 Users in Chain"
+  assert.equal u1.linkedUsers(), 3, "u1 Reports 3 Users in Chain"
+  assert.equal u2.linkedUsers(), 3, "u2 Reports 3 Users in Chain"
 
 QUnit.test "User Base Can Be Created (With 10 Users)", (assert) ->
   users = new UserBase

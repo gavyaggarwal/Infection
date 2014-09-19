@@ -46,16 +46,37 @@ User = (function() {
     return _results;
   };
 
-  User.prototype.equals = function(otherUser) {
-    if (this.id === otherUser.id) {
-      return true;
-    }
-    return false;
-  };
-
   User.prototype.infect = function() {
     return this.infected = true;
   };
+
+  User.prototype.usersInChain = function(infected, traversalID) {
+    var coach, i, student, users, _ref, _ref1;
+    users = 0;
+    if (this.traversal !== traversalID) {
+      this.traversal = traversalID;
+      if (infected) {
+        if (this.infected) {
+          users++;
+        }
+      } else {
+        users++;
+      }
+      _ref = this.students;
+      for (i in _ref) {
+        student = _ref[i];
+        users += student.usersInChain(infected, traversalID);
+      }
+      _ref1 = this.coaches;
+      for (i in _ref1) {
+        coach = _ref1[i];
+        users += coach.usersInChain(infected, traversalID);
+      }
+    }
+    return users;
+  };
+
+  User.prototype.infectedStudents = function() {};
 
   User.prototype.totalInfection = function(traversalID) {
     var coach, i, student, _ref, _ref1, _results;
@@ -75,6 +96,32 @@ User = (function() {
       }
       return _results;
     }
+  };
+
+  User.prototype.limitedInfection = function(userBase, traversalID) {};
+
+  User.prototype.startTotalInfection = function() {
+    var traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    return this.totalInfection(traversalID);
+  };
+
+  User.prototype.startLimitedInfection = function() {
+    var traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    return user.limitedInfection(traversalID);
+  };
+
+  User.prototype.linkedUsers = function() {
+    var traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    return this.usersInChain(false, traversalID);
+  };
+
+  User.prototype.linkedInfectedUsers = function() {
+    var traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    return this.usersInChain(true, traversalID);
   };
 
   return User;
@@ -124,13 +171,9 @@ UserBase = (function() {
 })();
 
 total_infection = function(user) {
-  var traversalID;
-  traversalID = Math.floor(Math.random() * 1000);
-  return user.totalInfection(traversalID);
+  return user.startTotalInfection();
 };
 
-limited_infection = function(user) {
-  var traversalID;
-  traversalID = Math.floor(Math.random() * 1000);
-  return user.limited(traversalID);
+limited_infection = function(user, infections) {
+  return user.startLimitedInfection();
 };

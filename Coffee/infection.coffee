@@ -3,7 +3,7 @@ class User
     @infected = no
     @coaches = []
     @students = []
-    @traversal = 0     #Used for keeping track of traversions
+    @traversal = 0     #Used for traversing users in hierarchy
   addCoach: (coach) ->
     if (@coaches.indexOf coach) is -1
       @coaches.push coach
@@ -18,23 +18,46 @@ class User
   addStudents: (students) ->
     for i,student of students
       @addStudent student
-  equals: (otherUser) ->
-    if @id is otherUser.id
-      return true
-    return false
   infect: =>
     @infected = yes
+  usersInChain: (infected, traversalID) ->
+    users = 0
+    if @traversal isnt traversalID
+      @traversal = traversalID
+      if infected
+        users++ if @infected
+      else
+        users++
+
+      for i,student of @students
+        users += student.usersInChain infected, traversalID
+      for i,coach of @coaches
+        users += coach.usersInChain infected, traversalID
+    return users
+  infectedStudents: ->
+    #Recursive function to calculate infected students
   totalInfection: (traversalID) ->
     if @traversal isnt traversalID #Let's traverse over this user
       @traversal = traversalID
       @infect()
-
       for i,student of @students
         student.totalInfection traversalID
-
       for i,coach of @coaches
         coach.totalInfection traversalID
+  limitedInfection: (userBase, traversalID) ->
 
+  startTotalInfection: ->
+    traversalID = Math.floor(Math.random() * 1000)
+    @totalInfection traversalID
+  startLimitedInfection: ->
+    traversalID = Math.floor(Math.random() * 1000)
+    user.limitedInfection traversalID
+  linkedUsers: ->
+    traversalID = Math.floor(Math.random() * 1000)
+    @usersInChain no, traversalID
+  linkedInfectedUsers: ->
+    traversalID = Math.floor(Math.random() * 1000)
+    @usersInChain yes, traversalID
 
 class UserBase
   constructor: ->
@@ -57,9 +80,7 @@ class UserBase
 
 
 total_infection = (user) ->
-  traversalID = Math.floor(Math.random() * 1000)
-  user.totalInfection traversalID
+  do user.startTotalInfection
 
-limited_infection = (user) ->
-  traversalID = Math.floor(Math.random() * 1000)
-  user.limited traversalID
+limited_infection = (user, infections) ->
+  do user.startLimitedInfection
