@@ -28,7 +28,8 @@ QUnit.test("Can Assign Students (u1 and u2) to User (u0)", function(assert) {
   assert.deepEqual(u2.coaches, [u0], "u2's coach is u0");
   assert.equal(u0.linkedUsers(), 3, "u0 Reports 3 Users in Chain");
   assert.equal(u1.linkedUsers(), 3, "u1 Reports 3 Users in Chain");
-  return assert.equal(u2.linkedUsers(), 3, "u2 Reports 3 Users in Chain");
+  assert.equal(u2.linkedUsers(), 3, "u2 Reports 3 Users in Chain");
+  return assert.equal(u0.infectedStudents(), 0, "u0 reports 0 infected students");
 });
 
 QUnit.test("User Base Can Be Created (With 10 Users)", function(assert) {
@@ -107,17 +108,105 @@ QUnit.test("Coach (c1) with Students (s1, s2, c2), Coach (c2) with Students (s3,
   assert.equal(s2.infected, true, "s2 is infected");
   assert.equal(s3.infected, true, "s3 is infected");
   assert.equal(s4.infected, true, "s4 is infected");
-  return assert.equal(s5.infected, true, "s5 is infected");
+  assert.equal(s5.infected, true, "s5 is infected");
+  assert.equal(c1.infectedStudents(), 6, "c1 reports 6 infected students");
+  return assert.equal(c2.infectedStudents(), 3, "c2 reports 3 infected students");
 });
 
-QUnit.test("Total Infection Works with 1 Coach with a Student", function(assert) {
-  var success, u0, u1, users2;
-  users2 = new UserBase;
-  users2.populateUsers([0, 1]);
-  u0 = users2.getUser(0);
-  u1 = users2.getUser(1);
-  u0.addStudent(u1);
-  total_infection(u0);
-  success = (u0.infected === true) && (u1.infected === true);
-  return assert.ok(success, "Success");
+QUnit.test("Total Infection with Large, Complex Dataset (1000 Users)", function(assert) {
+  var c1, c2, c3, c4, c5, users, _i, _j, _k, _l, _m, _n, _results, _results1, _results2, _results3, _results4, _results5;
+  users = new UserBase;
+  users.populateUsers((function() {
+    _results = [];
+    for (_i = 1; _i <= 1000; _i++){ _results.push(_i); }
+    return _results;
+  }).apply(this));
+  c1 = users.getUser(1);
+  c2 = users.getUser(2);
+  c3 = users.getUser(3);
+  c4 = users.getUser(4);
+  c5 = users.getUser(5);
+  c1.addStudents(users.getUsers((function() {
+    _results1 = [];
+    for (_j = 6; _j <= 100; _j++){ _results1.push(_j); }
+    return _results1;
+  }).apply(this)));
+  c1.addStudents([c2, c3]);
+  c2.addStudents(users.getUsers((function() {
+    _results2 = [];
+    for (_k = 101; _k <= 300; _k++){ _results2.push(_k); }
+    return _results2;
+  }).apply(this)));
+  c3.addStudents(users.getUsers((function() {
+    _results3 = [];
+    for (_l = 101; _l <= 200; _l++){ _results3.push(_l); }
+    return _results3;
+  }).apply(this)));
+  c3.addStudents([c4, c5]);
+  c4.addStudents(users.getUsers((function() {
+    _results4 = [];
+    for (_m = 301; _m <= 400; _m++){ _results4.push(_m); }
+    return _results4;
+  }).apply(this)));
+  c5.addStudents(users.getUsers((function() {
+    _results5 = [];
+    for (_n = 401; _n <= 500; _n++){ _results5.push(_n); }
+    return _results5;
+  }).apply(this)));
+  assert.equal(users.infectedUsersCount(), 0, "User base reports correct infected count before infection");
+  total_infection(users.getUser(694));
+  assert.equal(users.infectedUsersCount(), 1, "User base reports correct infected count after first infection");
+  total_infection(users.getUser(230));
+  assert.equal(users.infectedUsersCount(), 501, "User base reports correct infected count after both infections");
+  assert.equal(c1.infectedStudents(), 499, "Test Coach 1 reports correct number infected students");
+  return assert.equal(c3.infectedStudents(), 302, "Test Coach 2 reports correct number infected students");
+});
+
+QUnit.test("Coach (c) with Students (s1, s2, s3) where s2 is infected, Limited Infection (2) on c", function(assert) {
+  var c, s1, s2, s3, users;
+  users = new UserBase;
+  users.populateUsers([1, 2, 3, 4]);
+  c = users.getUser(1);
+  s1 = users.getUser(2);
+  s2 = users.getUser(3);
+  s3 = users.getUser(4);
+  c.addStudents([s1, s2, s3]);
+  s2.infect();
+  limited_infection(c, 2);
+  assert.equal(c.infected, true, "c is infected");
+  assert.equal(s1.infected, true, "s1 is infected");
+  assert.equal(s2.infected, true, "s2 is infected");
+  assert.equal(s3.infected, false, "s3 is not infected");
+  return assert.equal(c.percentInfectedStudents(), 2 / 3 * 100, "c reports 66% of students are infected");
+});
+
+QUnit.test("Limited Infection (6) on Coach with 3 Students", function(assert) {
+  var c, remaining, users;
+  users = new UserBase;
+  users.populateUsers([1, 2, 3, 4]);
+  c = users.getUser(1);
+  c.addStudents(users.getUsers([2, 3, 4]));
+  remaining = limited_infection(c, 6);
+  assert.equal(c.infected, true, "Coach is infected");
+  assert.equal(c.percentInfectedStudents(), 100, "100% of coach's students are infected");
+  return assert.equal(remaining, 2, "2 more users need to be infected");
+});
+
+QUnit.test("Limited Infection (A, 6) for 3 Coaches with 3 Students Each", function(assert) {
+  var c1, c2, c3, remaining, users;
+  users = new UserBase;
+  users.populateUsers([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+  c1 = users.getUser(1);
+  c2 = users.getUser(2);
+  c3 = users.getUser(3);
+  c1.addStudents(users.getUsers([4, 5, 6]));
+  c2.addStudents(users.getUsers([7, 8, 9]));
+  c3.addStudents(users.getUsers([10, 11, 12]));
+  remaining = limited_infection(c1, 6);
+  assert.equal(c1.infected, true, "Coach A is infected");
+  assert.equal(c1.percentInfectedStudents(), 100, "All of Coach A's students are infected");
+  assert.equal(c2.infected, true, "Coach B is infected");
+  assert.equal(c2.percentInfectedStudents(), 100, "All of Coach B's students are infected");
+  assert.equal(c3.infected, false, "Coach C is not infected");
+  return assert.equal(c3.percentInfectedStudents(), 0, "None of Coach C's students are infected");
 });

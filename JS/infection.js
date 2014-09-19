@@ -10,6 +10,7 @@ User = (function() {
     this.coaches = [];
     this.students = [];
     this.traversal = 0;
+    this.userbase = null;
   }
 
   User.prototype.addCoach = function(coach) {
@@ -32,7 +33,10 @@ User = (function() {
   User.prototype.addStudent = function(student) {
     if ((this.students.indexOf(student)) === -1) {
       this.students.push(student);
-      return student.addCoach(this);
+      student.addCoach(this);
+    }
+    if (this.userbase) {
+      return this.userbase.addCoach(this);
     }
   };
 
@@ -47,7 +51,14 @@ User = (function() {
   };
 
   User.prototype.infect = function() {
-    return this.infected = true;
+    var prevState;
+    prevState = this.infected;
+    this.infected = true;
+    if (prevState) {
+      return false;
+    } else {
+      return true;
+    }
   };
 
   User.prototype.usersInChain = function(infected, traversalID) {
@@ -76,7 +87,22 @@ User = (function() {
     return users;
   };
 
-  User.prototype.infectedStudents = function() {};
+  User.prototype.countInfectedStudents = function(traversalID) {
+    var i, student, users, _ref;
+    users = 0;
+    if (this.traversal !== traversalID) {
+      this.traversal = traversalID;
+      if (this.infected) {
+        users++;
+      }
+      _ref = this.students;
+      for (i in _ref) {
+        student = _ref[i];
+        users += student.countInfectedStudents(traversalID);
+      }
+    }
+    return users;
+  };
 
   User.prototype.totalInfection = function(traversalID) {
     var coach, i, student, _ref, _ref1, _results;
@@ -98,7 +124,21 @@ User = (function() {
     }
   };
 
-  User.prototype.limitedInfection = function(userBase, traversalID) {};
+  User.prototype.limitedInfection = function(traversalID, remaining) {
+    var student, _i, _len, _ref;
+    if (this.traversal !== traversalID && remaining > 0) {
+      this.traversal = traversalID;
+      if (this.infect()) {
+        remaining--;
+      }
+      _ref = this.students;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        student = _ref[_i];
+        remaining = student.limitedInfection(traversalID, remaining);
+      }
+    }
+    return remaining;
+  };
 
   User.prototype.startTotalInfection = function() {
     var traversalID;
@@ -106,10 +146,27 @@ User = (function() {
     return this.totalInfection(traversalID);
   };
 
-  User.prototype.startLimitedInfection = function() {
+  User.prototype.startLimitedInfection = function(infections) {
     var traversalID;
     traversalID = Math.floor(Math.random() * 1000);
-    return user.limitedInfection(traversalID);
+    return this.limitedInfection(traversalID, infections);
+  };
+
+  User.prototype.infectedStudents = function() {
+    var infectedCount, traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    infectedCount = this.countInfectedStudents(traversalID);
+    if (this.infected) {
+      infectedCount--;
+    }
+    return infectedCount;
+  };
+
+  User.prototype.percentInfectedStudents = function() {
+    if (this.students.length === 0) {
+      return 0;
+    }
+    return this.infectedStudents() / this.students.length * 100;
   };
 
   User.prototype.linkedUsers = function() {
@@ -131,6 +188,7 @@ User = (function() {
 UserBase = (function() {
   function UserBase() {
     this.users = [];
+    this.coaches = [];
   }
 
   UserBase.prototype.populateUsers = function(ids) {
@@ -145,6 +203,7 @@ UserBase = (function() {
   };
 
   UserBase.prototype.addUser = function(user) {
+    user.userbase = this;
     return this.users.push(user);
   };
 
@@ -166,6 +225,38 @@ UserBase = (function() {
     return selectedUser;
   };
 
+  UserBase.prototype.getUsers = function(ids) {
+    var i, id, user, users;
+    users = [];
+    for (i in ids) {
+      id = ids[i];
+      user = this.getUser(id);
+      if (user !== null) {
+        users.push(user);
+      }
+    }
+    return users;
+  };
+
+  UserBase.prototype.infectedUsersCount = function() {
+    var count, user, _i, _len, _ref;
+    count = 0;
+    _ref = this.users;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      user = _ref[_i];
+      if (user.infected) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  UserBase.prototype.addCoach = function(coach) {
+    if ((this.coaches.indexOf(coach)) === -1) {
+      return this.coaches.push(coach);
+    }
+  };
+
   return UserBase;
 
 })();
@@ -175,5 +266,5 @@ total_infection = function(user) {
 };
 
 limited_infection = function(user, infections) {
-  return user.startLimitedInfection();
+  return user.startLimitedInfection(infections);
 };
