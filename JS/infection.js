@@ -40,6 +40,14 @@ User = (function() {
     }
   };
 
+  User.prototype.isStudent = function() {
+    if (this.coaches.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
   User.prototype.addStudents = function(students) {
     var i, student, _results;
     _results = [];
@@ -104,6 +112,21 @@ User = (function() {
     return users;
   };
 
+  User.prototype.countTotalStudents = function(traversalID) {
+    var student, users, _i, _len, _ref;
+    users = 0;
+    if (this.traversal !== traversalID) {
+      this.traversal = traversalID;
+      users++;
+      _ref = this.students;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        student = _ref[_i];
+        users += student.countTotalStudents(traversalID);
+      }
+    }
+    return users;
+  };
+
   User.prototype.totalInfection = function(traversalID) {
     var coach, i, student, _ref, _ref1, _results;
     if (this.traversal !== traversalID) {
@@ -122,6 +145,23 @@ User = (function() {
       }
       return _results;
     }
+  };
+
+  User.prototype.limitedInfection = function(traversalID) {
+    var infectedCount, student, _i, _len, _ref;
+    infectedCount = 0;
+    if (this.traversal !== traversalID) {
+      this.traversal = traversalID;
+      if (this.infect()) {
+        infectedCount++;
+      }
+      _ref = this.students;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        student = _ref[_i];
+        infectedCount += student.limitedInfection(traversalID);
+      }
+    }
+    return infectedCount;
   };
 
   User.prototype.limitedInfection2 = function(traversalID, remaining) {
@@ -162,11 +202,19 @@ User = (function() {
     return infectedCount;
   };
 
+  User.prototype.totalStudents = function() {
+    var infectedCount, traversalID;
+    traversalID = Math.floor(Math.random() * 1000);
+    infectedCount = this.countTotalStudents(traversalID);
+    infectedCount--;
+    return infectedCount;
+  };
+
   User.prototype.percentInfectedStudents = function() {
     if (this.students.length === 0) {
       return 0;
     }
-    return this.infectedStudents() / this.students.length * 100;
+    return this.infectedStudents() / this.totalStudents() * 100;
   };
 
   User.prototype.linkedUsers = function() {
@@ -266,5 +314,28 @@ total_infection = function(user) {
 };
 
 limited_infection = function(user, infections) {
-  return user.startLimitedInfection(infections);
+  var bestCoach, bestCoachPercent, coach, infectedCount, percentInfected, result, _i, _len, _ref;
+  infectedCount = user.startLimitedInfection(infections);
+  infections -= infectedCount;
+  while (infections > 0) {
+    bestCoach = null;
+    bestCoachPercent = -1;
+    _ref = user.userbase.coaches;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      coach = _ref[_i];
+      percentInfected = coach.percentInfectedStudents();
+      if ((percentInfected !== 100 || !coach.infected) && percentInfected > bestCoachPercent) {
+        bestCoach = coach;
+        bestCoachPercent = percentInfected;
+      }
+    }
+    if (bestCoach) {
+      result = bestCoach.startLimitedInfection(infections);
+      infectedCount += result;
+      infections -= result;
+    } else {
+      break;
+    }
+  }
+  return infectedCount;
 };

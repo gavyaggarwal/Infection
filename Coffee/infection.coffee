@@ -18,6 +18,8 @@ class User
       student.addCoach @
     #If this user has students, it must be a coach
     if @userbase then @userbase.addCoach @
+  isStudent: ->
+    if @coaches.length > 0 then yes else no
   addStudents: (students) ->
     for i,student of students
       @addStudent student
@@ -49,6 +51,15 @@ class User
       for i,student of @students
         users += student.countInfectedStudents traversalID
     return users
+  countTotalStudents: (traversalID) ->
+    users = 0
+    if @traversal isnt traversalID
+      @traversal = traversalID
+      users++
+
+      for student in @students
+        users += student.countTotalStudents traversalID
+    users
   totalInfection: (traversalID) ->
     if @traversal isnt traversalID #Let's traverse over this user
       @traversal = traversalID
@@ -57,6 +68,14 @@ class User
         student.totalInfection traversalID
       for i,coach of @coaches
         coach.totalInfection traversalID
+  limitedInfection: (traversalID) ->
+    infectedCount = 0
+    if @traversal isnt traversalID
+      @traversal = traversalID
+      if @infect() then infectedCount++
+      for student in @students
+        infectedCount += student.limitedInfection traversalID
+    infectedCount
   #This version caps the number of infected users
   limitedInfection2: (traversalID, remaining) ->
     if @traversal isnt traversalID and remaining > 0
@@ -76,11 +95,16 @@ class User
     traversalID = Math.floor(Math.random() * 1000)
     infectedCount = @countInfectedStudents traversalID
     infectedCount-- if @infected #We don't count the current user
-    return infectedCount
+    infectedCount
+  totalStudents: ->
+    traversalID = Math.floor(Math.random() * 1000)
+    infectedCount = @countTotalStudents traversalID
+    infectedCount-- #We don't count the current user
+    infectedCount
   percentInfectedStudents: ->
     if @students.length is 0
       return 0
-    @infectedStudents() / @students.length * 100
+    @infectedStudents() / @totalStudents() * 100
   linkedUsers: ->
     traversalID = Math.floor(Math.random() * 1000)
     @usersInChain no, traversalID
@@ -127,4 +151,23 @@ total_infection = (user) ->
   do user.startTotalInfection
 
 limited_infection = (user, infections) ->
-  user.startLimitedInfection infections
+  infectedCount = user.startLimitedInfection infections
+  infections -= infectedCount
+
+  while infections > 0
+    bestCoach = null
+    bestCoachPercent = -1
+    for coach in user.userbase.coaches
+      percentInfected = coach.percentInfectedStudents()
+      if (percentInfected isnt 100 or not coach.infected) and percentInfected > bestCoachPercent
+        bestCoach = coach
+        bestCoachPercent = percentInfected
+
+    if bestCoach
+      result = bestCoach.startLimitedInfection infections
+      infectedCount += result
+      infections -= result
+    else
+      break
+
+  infectedCount

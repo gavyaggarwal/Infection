@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>Infection Problem</title>
-  <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
-  <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.15.0.css">
+  <link href='libraries/lato.css' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="libraries/qunit.css">
   <script src="JS/infection.js"></script>
   <style type="text/css">
     body {
@@ -23,7 +23,6 @@
 </head>
 
 <body>
-  <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
   <h1>Infection</h1>
   <h2>by Gavy Aggarwal</h2>
   <br /><br />
@@ -31,12 +30,13 @@
     Infection is written in CoffeeScript and compiled to JavaScript.
     The run is being run in a browser for demonstration purposes but can be easily configured to run in a node.js server environment.
     Unit tests are performed using <a href="http://qunitjs.com/">JUnit</a>, and the results are shown below.
+    This program also contains the logic for <b>limitedInfection2</b>, which caps the number of users to infect based on the argument.
   </span>
   <br />
   <br />
   <div id="qunit" style="width:80%;display:inline-block;text-align:left;"></div>
   <div id="qunit-fixture"></div>
-  <script src="http://code.jquery.com/qunit/qunit-1.15.0.js"></script>
-  <script src="JS/tests.js"></script>
+  <script src="libraries/qunit.js"></script>
+  <script src="js/tests.js"></script>
 </body>
 </html>

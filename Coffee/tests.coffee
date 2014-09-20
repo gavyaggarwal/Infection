@@ -130,35 +130,16 @@ QUnit.test "Total Infection with Large, Complex Dataset (1000 Users)", (assert) 
   assert.equal c3.infectedStudents(), 302, "Test Coach 2 reports correct
    number infected students"
 
-QUnit.test "Coach (c) with Students (s1, s2, s3) where s2 is infected, Limited
- Infection (2) on c", (assert) ->
-  users = new UserBase
-  users.populateUsers [1...5]
-  c = users.getUser 1
-  s1 = users.getUser 2
-  s2 = users.getUser 3
-  s3 = users.getUser 4
-  c.addStudents [s1,s2,s3]
-  s2.infect()
-  limited_infection c, 2
-  assert.equal c.infected, yes, "c is infected"
-  assert.equal s1.infected, yes, "s1 is infected"
-  assert.equal s2.infected, yes, "s2 is infected"
-  assert.equal s3.infected, no, "s3 is not infected"
-  assert.equal c.percentInfectedStudents(), 2/3 * 100, "c reports 66% of
-   students are infected"
-
-QUnit.test "Limited Infection (6) on Coach with 3 Students", (assert) ->
+QUnit.test "Limited Infection (C, 6) on Coach (C) with 3 Students", (assert) ->
   users = new UserBase
   users.populateUsers [1..4]
   c = users.getUser 1
   c.addStudents users.getUsers [2..4]
-  remaining = limited_infection c, 6
-  assert.equal c.infected, yes, "Coach is infected"
+  numInfected = limited_infection c, 6
+  assert.equal c.infected, yes, "Coach C is infected"
   assert.equal c.percentInfectedStudents(), 100, "100% of coach's
    students are infected"
-  assert.equal remaining, 2, "2 more users need to be infected"
-
+  assert.equal numInfected, 4, "4 users infected"
 
 QUnit.test "Limited Infection (A, 6) for 3 Coaches with 3 Students Each", (assert) ->
   users = new UserBase
@@ -169,7 +150,7 @@ QUnit.test "Limited Infection (A, 6) for 3 Coaches with 3 Students Each", (asser
   c1.addStudents users.getUsers [4..6]
   c2.addStudents users.getUsers [7..9]
   c3.addStudents users.getUsers [10..12]
-  remaining = limited_infection c1, 6
+  limited_infection c1, 6
   assert.equal c1.infected, yes, "Coach A is infected"
   assert.equal c1.percentInfectedStudents(), 100, "All of Coach A's
   students are infected"
@@ -179,3 +160,81 @@ QUnit.test "Limited Infection (A, 6) for 3 Coaches with 3 Students Each", (asser
   assert.equal c3.infected, no, "Coach C is not infected"
   assert.equal c3.percentInfectedStudents(), 0, "None of Coach C's
   students are infected"
+
+QUnit.test "Limited Infection (C, 1) where A coaches B and B coaches C", (assert) ->
+  users = new UserBase
+  users.populateUsers [1..3]
+  c1 = users.getUser 1
+  c2 = users.getUser 2
+  s3 = users.getUser 3
+  c1.addStudent c2
+  c2.addStudent s3
+  limited_infection s3, 1
+  assert.equal c1.infected, no, "A is not infected"
+  assert.equal c1.percentInfectedStudents(), 50, "Half of A's
+  students are infected"
+  assert.equal c2.infected, no, "B is not infected"
+  assert.equal c2.percentInfectedStudents(), 100, "All of B's
+  students are infected"
+  assert.equal s3.infected, yes, "C is infected"
+
+QUnit.test "Limited Infection (C, 2) where A coaches B and B coaches C", (assert) ->
+  users = new UserBase
+  users.populateUsers [1..3]
+  c1 = users.getUser 1
+  c2 = users.getUser 2
+  s3 = users.getUser 3
+  c1.addStudent c2
+  c2.addStudent s3
+  limited_infection s3, 2
+  assert.equal c1.infected, no, "A is not infected"
+  assert.equal c1.percentInfectedStudents(), 100, "All of Coach A's
+  students are infected"
+  assert.equal c2.infected, yes, "B is infected"
+  assert.equal c2.percentInfectedStudents(), 100, "All of Coach B's
+  students are infected"
+  assert.equal s3.infected, yes, "C is infected"
+
+QUnit.test "Limited Infection (C, 3) where A coaches B and B coaches C", (assert) ->
+  users = new UserBase
+  users.populateUsers [1..3]
+  c1 = users.getUser 1
+  c2 = users.getUser 2
+  s3 = users.getUser 3
+  c1.addStudent c2
+  c2.addStudent s3
+  limited_infection s3, 3
+  assert.equal c1.infected, yes, "A is infected"
+  assert.equal c2.infected, yes, "B is infected"
+  assert.equal s3.infected, yes, "C is infected"
+
+
+QUnit.test "Limited Infection with Large, Complex Dataset (1000 Users)", (assert) ->
+  users = new UserBase
+  users.populateUsers [1..1000]
+  u3 = users.getUser 3
+  u5 = users.getUser 5
+  u11 = users.getUser 11
+  u12 = users.getUser 12
+  u13 = users.getUser 13
+  u14 = users.getUser 14
+  u15 = users.getUser 15
+  u16 = users.getUser 16
+
+  u3.addStudents users.getUsers [17..100]
+  u3.addStudents [u11, u12]
+  u5.addStudents users.getUsers [301..400]
+  u11.addStudents users.getUsers [101..200]
+  u12.addStudents users.getUsers [201..300]
+  u16.addCoaches users.getUsers [1..10]
+  u13.addStudent u14
+  u13.addStudents users.getUsers [851..900]
+  u14.addStudents users.getUsers [901..950]
+  u15.addStudents users.getUsers [951..1000]
+
+  assert.equal users.infectedUsersCount(), 0, "User base reports correct
+  infected count before infection"
+
+  infected = limited_infection (users.getUser 9), 110
+
+  assert.equal infected, 110, "Correct number of users infected"
