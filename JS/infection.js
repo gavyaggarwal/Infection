@@ -124,7 +124,7 @@ User = (function() {
     }
   };
 
-  User.prototype.limitedInfection = function(traversalID, remaining) {
+  User.prototype.limitedInfection2 = function(traversalID, remaining) {
     var student, _i, _len, _ref;
     if (this.traversal !== traversalID && remaining > 0) {
       this.traversal = traversalID;
@@ -134,7 +134,7 @@ User = (function() {
       _ref = this.students;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         student = _ref[_i];
-        remaining = student.limitedInfection(traversalID, remaining);
+        remaining = student.limitedInfection2(traversalID, remaining);
       }
     }
     return remaining;

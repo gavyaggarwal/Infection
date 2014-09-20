@@ -57,12 +57,13 @@ class User
         student.totalInfection traversalID
       for i,coach of @coaches
         coach.totalInfection traversalID
-  limitedInfection: (traversalID, remaining) ->
+  #This version caps the number of infected users
+  limitedInfection2: (traversalID, remaining) ->
     if @traversal isnt traversalID and remaining > 0
       @traversal = traversalID
       if @infect() then remaining--
       for student in @students
-        remaining = student.limitedInfection traversalID, remaining
+        remaining = student.limitedInfection2 traversalID, remaining
     remaining
 
   startTotalInfection: ->
